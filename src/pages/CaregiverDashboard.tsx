@@ -11,6 +11,11 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 
+interface Routine {
+  id: string;
+  name: string;
+}
+
 interface Log {
   id: string;
   routineId: string;
@@ -23,14 +28,11 @@ export default function CaregiverDashboard() {
 
   const [adultId, setAdultId] = useState<string | null>(null);
   const [code, setCode] = useState("");
-
-  const [routines, setRoutines] = useState<any[]>([]);
+  const [routines, setRoutines] = useState<Routine[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
-
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [lastLogId, setLastLogId] = useState<string | null>(null);
 
-  // Fetch caregiver link
   useEffect(() => {
     const fetchLink = async () => {
       if (!user) return;
@@ -51,30 +53,26 @@ export default function CaregiverDashboard() {
     fetchLink();
   }, [user]);
 
-  // Fetch adult routines
   useEffect(() => {
-    const fetchRoutines = async () => {
-      if (!adultId) return;
+    if (!adultId) return;
 
-      const q = query(
-        collection(db, "routines"),
-        where("ownerId", "==", adultId)
-      );
+    const q = query(
+      collection(db, "routines"),
+      where("ownerId", "==", adultId)
+    );
 
-      const snap = await getDocs(q);
-
-      const data = snap.docs.map((doc) => ({
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Routine[];
 
       setRoutines(data);
-    };
+    });
 
-    fetchRoutines();
+    return () => unsubscribe();
   }, [adultId]);
 
-  // Real-time routine logs
   useEffect(() => {
     if (!adultId) return;
 
@@ -89,30 +87,32 @@ export default function CaregiverDashboard() {
         id: doc.id,
         ...doc.data()
       })) as Log[];
-    
+
       setLogs(data);
-    
-      // Detect new completion
+
       if (data.length > 0) {
         const newest = data[0];
-    
+
         if (lastLogId && newest.id !== lastLogId) {
           const routineName =
             routines.find((r) => r.id === newest.routineId)?.name || "Routine";
-    
+
           const time = newest.completedAt
             ?.toDate?.()
-            ?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    
+            ?.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+
           setAlertMessage(`🎉 ${routineName} finished at ${time}`);
         }
-    
+
         setLastLogId(newest.id);
       }
     });
 
     return () => unsubscribe();
-  }, [adultId]);
+  }, [adultId, routines, lastLogId]);
 
   async function connect() {
     if (!user) {
@@ -127,68 +127,83 @@ export default function CaregiverDashboard() {
 
     await linkCaregiver(code, user.uid);
     alert("Linked successfully!");
+    window.location.reload();
   }
 
   return (
-    <div style={{ padding: 40 }}>
-      <h2>Caregiver Dashboard</h2>
+    <div className="page stack">
+      <div className="card">
+        <h2 className="section-title">Caregiver Dashboard</h2>
+        <p className="subtle">
+          View linked adult routines and recent activity in real time.
+        </p>
+      </div>
+
       {alertMessage && (
-  <div
-    style={{
-      background: "#d4edda",
-      padding: "10px",
-      marginBottom: "20px",
-      borderRadius: "6px",
-      fontWeight: "bold"
-    }}
-  >
-    {alertMessage}
-  </div>
-)}
+        <div className="card">
+          <div className="badge-success">{alertMessage}</div>
+        </div>
+      )}
 
-      {/* Connect to adult */}
       {!adultId && (
-        <>
-          <p>No adult linked yet.</p>
+        <div className="card">
+          <h3 className="section-title">Connect to an Adult Account</h3>
+          <p className="subtle">
+            Enter the invite code shared by the adult to start monitoring progress.
+          </p>
 
-          <input
-            placeholder="Enter invite code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
+          <div className="stack" style={{ maxWidth: 420 }}>
+            <input
+              placeholder="Enter invite code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+            />
 
-          <button onClick={connect}>Connect</button>
-        </>
+            <button onClick={connect}>Connect</button>
+          </div>
+        </div>
       )}
 
       {adultId && (
         <>
-          <h3>Adult Routines</h3>
+          <div className="card">
+            <h3 className="section-title">Adult Routines</h3>
 
-          <ul>
-            {routines.map((r) => (
-              <li key={r.id}>{r.name}</li>
-            ))}
-          </ul>
+            {routines.length === 0 ? (
+              <p className="subtle">No routines yet.</p>
+            ) : (
+              <ul className="list">
+                {routines.map((r) => (
+                  <li key={r.id} style={{ marginBottom: 10 }}>
+                    {r.name}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-          <h3>Recent Activity</h3>
+          <div className="card">
+            <h3 className="section-title">Recent Activity</h3>
 
-          {logs.length === 0 && <p>No activity yet.</p>}
+            {logs.length === 0 ? (
+              <p className="subtle">No activity yet.</p>
+            ) : (
+              <ul className="list">
+                {logs.map((log) => {
+                  const routineName =
+                    routines.find((r) => r.id === log.routineId)?.name ||
+                    "Routine";
 
-          <ul>
-            {logs.map((log) => {
-              const routineName =
-                routines.find((r) => r.id === log.routineId)?.name ||
-                "Routine";
-
-              return (
-                <li key={log.id}>
-                  {routineName} — {log.completedSteps.length} steps —{" "}
-                  {log.completedAt?.toDate?.().toLocaleString()}
-                </li>
-              );
-            })}
-          </ul>
+                  return (
+                    <li key={log.id} style={{ marginBottom: 10 }}>
+                      {routineName} — {log.completedSteps.length} steps —{" "}
+                      {log.completedAt?.toDate?.().toLocaleString()}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </>
       )}
     </div>

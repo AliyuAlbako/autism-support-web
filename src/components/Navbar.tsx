@@ -1,9 +1,17 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
 import { useAuth } from "../context/AuthContext";
+import { auth } from "../services/firebase";
 import logo from "../assets/smaa-logo.png";
 
 export default function Navbar() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await signOut(auth);
+    navigate("/login");
+  }
 
   return (
     <div className="navbar">
@@ -19,6 +27,9 @@ export default function Navbar() {
               <Link to="/adult">Adult</Link>
               <Link to="/caregiver">Caregiver</Link>
               <Link to="/clinician">Clinician</Link>
+              <button className="secondary" onClick={handleLogout}>
+                Logout
+              </button>
             </>
           ) : (
             <>
