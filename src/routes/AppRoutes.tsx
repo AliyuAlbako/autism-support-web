@@ -9,12 +9,15 @@ import RequireAuth from "./RequireAuth";
 import RequireRole from "./RequireRole";
 import CreateRoutine from "../pages/CreateRoutine";
 import RoutineView from "../pages/RoutineView";
+import Home from "../pages/Home";
 
 export default function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+
 
       <Route
         path="/setup-role"
