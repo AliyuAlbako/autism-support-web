@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { auth } from "../services/firebase";
 import logo from "../assets/smaa-logo.png";
 
+
 export default function Navbar() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,19 +23,22 @@ export default function Navbar() {
         </Link>
 
         <div className="nav-links">
-          {user ? (
+          {!user ? (
             <>
-              <Link to="/adult">Adult</Link>
-              <Link to="/caregiver">Caregiver</Link>
-              <Link to="/clinician">Clinician</Link>
-              <button className="secondary" onClick={handleLogout}>
-                Logout
-              </button>
+              <Link to="/">Home</Link>
+              <Link to="/login">Login</Link>
+              <Link to="/register">Register</Link>
+              
             </>
           ) : (
             <>
-              <Link to="/login">Login</Link>
-              <Link to="/register">Register</Link>
+              <Link to="/dashboard">Dashboard</Link>
+              <Link to="/discover">Discover</Link>
+              <Link to="/requests">Requests</Link>
+              <Link to="/support-team">Support Team</Link>
+              <button className="secondary" onClick={handleLogout}>
+                Logout
+              </button>
             </>
           )}
         </div>

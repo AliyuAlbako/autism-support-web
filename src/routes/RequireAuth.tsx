@@ -1,13 +1,13 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import type { JSX } from "react";
+import type { ReactNode } from "react";
 
-export default function RequireAuth({ children }: { children: JSX.Element }) {
+export default function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="page">Loading...</div>;
 
   if (!user) return <Navigate to="/login" replace />;
 
-  return children;
+  return <>{children}</>;
 }

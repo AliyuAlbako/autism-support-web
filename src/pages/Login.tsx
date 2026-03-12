@@ -15,7 +15,7 @@ export default function Login() {
     try {
       setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/");
+     navigate("/dashboard");
     } catch (error) {
       console.error(error);
       alert("Login failed. Check your email and password.");

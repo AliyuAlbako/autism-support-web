@@ -15,7 +15,8 @@ export default function Register() {
     try {
       setLoading(true);
       await createUserWithEmailAndPassword(auth, email, password);
-      navigate("/setup-role");
+      // navigate("/setup-role");
+      navigate("/select-role");
     } catch (error) {
       console.error(error);
       alert("Registration failed. Please try again.");
