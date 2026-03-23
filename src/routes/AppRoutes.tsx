@@ -9,6 +9,8 @@ import ClinicianProfileForm from "../pages/ClinicianProfileForm";
 import TherapistProfileForm from "../pages/TherapistProfileForm";
 import CaseWorkerProfileForm from "../pages/CaseWorkerProfileForm";
 import AdminProfileForm from "../pages/AdminProfileForm";
+import About from "../pages/About";
+import Contact from "../pages/Contact";
 
 import AdultDashboard from "../pages/AdultDashboard";
 import CaregiverDashboard from "../pages/CaregiverDashboard";
@@ -32,8 +34,11 @@ export default function AppRoutes() {
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+       <Route path="/contact" element={<Contact />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      
 
       {/* General authenticated routes */}
       <Route

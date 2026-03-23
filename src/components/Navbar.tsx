@@ -26,6 +26,8 @@ export default function Navbar() {
           {!user ? (
             <>
               <Link to="/">Home</Link>
+              <Link to= "/about">About</Link>
+              <Link to= "/contact">Contact</Link>
               <Link to="/login">Login</Link>
               <Link to="/register">Register</Link>
               
@@ -33,6 +35,8 @@ export default function Navbar() {
           ) : (
             <>
               <Link to="/dashboard">Dashboard</Link>
+              <Link to="/about">About</Link>
+              <Link to="/contact">Contact</Link>
               <Link to="/discover">Discover</Link>
               <Link to="/requests">Requests</Link>
               <Link to="/support-team">Support Team</Link>
