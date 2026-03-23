@@ -1,145 +1,283 @@
 import { useState } from "react";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { db } from "../services/firebase";
 import { useAuth } from "../context/AuthContext";
+import OnboardingLayout from "../components/onboarding/OnboardingLayout";
+import ProgressSteps from "../components/onboarding/ProgressSteps";
+import CheckboxGroup from "../components/onboarding/CheckboxGroup";
+import MultiStepActions from "../components/onboarding/MultiStepActions";
+import { saveRoleProfile, saveUserRole } from "../services/onboarding";
+
+const stepLabels = ["Identity", "Relationship", "Responsibilities"];
 
 export default function CaregiverProfileForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     fullName: "",
-    relationship: "",
+    preferredName: "",
+    dateOfBirth: "",
+    gender: "",
     phone: "",
+    email: user?.email || "",
     city: "",
     state: "",
-    livesWithIndividual: false,
-    connectionPreference: "",
+    preferredCommunication: "",
+    relationship: "",
+    careDuration: "",
   });
 
-  const [supportAreas, setSupportAreas] = useState<string[]>([]);
-  const [availability, setAvailability] = useState<string[]>([]);
+  const [responsibilities, setResponsibilities] = useState<string[]>([]);
 
-  function updateField(key: string, value: string | boolean) {
+  function updateField(key: string, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function toggleArrayValue(
-    value: string,
-    current: string[],
-    setter: React.Dispatch<React.SetStateAction<string[]>>
-  ) {
-    if (current.includes(value)) {
-      setter(current.filter((item) => item !== value));
-    } else {
-      setter([...current, value]);
+  function toggleResponsibility(value: string) {
+    setResponsibilities((prev) =>
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value]
+    );
+  }
+
+  function nextStep() {
+    setStep((prev) => Math.min(prev + 1, stepLabels.length));
+  }
+
+  function prevStep() {
+    setStep((prev) => Math.max(prev - 1, 1));
+  }
+
+  function canProceed() {
+    if (step === 1) {
+      return form.fullName && form.phone && form.city;
     }
+
+    if (step === 2) {
+      return form.relationship && form.careDuration;
+    }
+
+    if (step === 3) {
+      return responsibilities.length > 0;
+    }
+
+    return true;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (step < stepLabels.length) {
+      if (!canProceed()) {
+        alert("Please complete the required fields before continuing.");
+        return;
+      }
+
+      nextStep();
+      return;
+    }
+
     if (!user) return;
 
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      email: user.email,
-      role: "caregiver",
-      createdAt: serverTimestamp(),
-    });
+    try {
+      setLoading(true);
 
-    await setDoc(doc(db, "caregiver_profiles", user.uid), {
-      ...form,
-      supportAreas,
-      availability,
-      createdAt: serverTimestamp(),
-    });
+      await saveUserRole(user.uid, user.email, "caregiver");
 
-    navigate("/caregiver");
+      await saveRoleProfile("caregiver_profiles", user.uid, {
+        ...form,
+        responsibilities,
+      });
+
+      navigate("/caregiver");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="page">
-      <div className="card" style={{ maxWidth: 760, margin: "40px auto" }}>
-        <h2 className="section-title">Caregiver Profile</h2>
-        <p className="subtle">Step 2 of 3 — Caregiver Profile</p>
+    <OnboardingLayout
+      title="Caregiver Profile"
+      subtitle="Tell us how you support autistic individuals."
+    >
+      <ProgressSteps
+        currentStep={step}
+        totalSteps={stepLabels.length}
+        labels={stepLabels}
+      />
 
-        <form onSubmit={handleSubmit} className="stack" style={{ marginTop: 20 }}>
-          <h3>Basic Information</h3>
-          <input placeholder="Full Name" value={form.fullName} onChange={(e) => updateField("fullName", e.target.value)} />
-          <input placeholder="Phone Number" value={form.phone} onChange={(e) => updateField("phone", e.target.value)} />
-          <input placeholder="City" value={form.city} onChange={(e) => updateField("city", e.target.value)} />
-          <input placeholder="State" value={form.state} onChange={(e) => updateField("state", e.target.value)} />
+      <form onSubmit={handleSubmit} className="stack">
+        {/* STEP 1 */}
+        {step === 1 && (
+          <div className="step-shell">
+            <div className="top-banner">
+              <strong>Caregiver Information</strong>
+              <p className="step-note" style={{ marginBottom: 0 }}>
+                Tell us who you are and how we can contact you.
+              </p>
+            </div>
 
-          <select
-            value={form.relationship}
-            onChange={(e) => updateField("relationship", e.target.value)}
-            style={{ width: "100%", maxWidth: 420, padding: "12px 14px", border: "1px solid #e5e7eb", borderRadius: 12 }}
-          >
-            <option value="">Relationship to Individual</option>
-            <option value="parent">Parent</option>
-            <option value="sibling">Sibling</option>
-            <option value="guardian">Guardian</option>
-            <option value="residential-support-staff">Residential Support Staff</option>
-            <option value="personal-aide">Personal Aide</option>
-            <option value="other">Other</option>
-          </select>
+            <div className="form-section">
+              <h3>Personal Details</h3>
 
-          <h3>Support Areas</h3>
-          {[
-            "Daily Living Skills",
-            "Emotional Regulation",
-            "Medication Routine",
-            "Social Support",
-            "Community Participation",
-            "Employment Readiness",
-          ].map((item) => (
-            <label key={item}>
+              <label className="field-label">Full Name</label>
               <input
-                type="checkbox"
-                checked={supportAreas.includes(item)}
-                onChange={() => toggleArrayValue(item, supportAreas, setSupportAreas)}
-              />{" "}
-              {item}
-            </label>
-          ))}
+                value={form.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
+              />
 
-          <h3>Care Context</h3>
-          <label>
-            <input
-              type="checkbox"
-              checked={form.livesWithIndividual}
-              onChange={(e) => updateField("livesWithIndividual", e.target.checked)}
-            />{" "}
-            Lives with autistic individual
-          </label>
-
-          <h3>Availability</h3>
-          {["Morning", "Afternoon", "Evening", "Flexible"].map((item) => (
-            <label key={item}>
+              <label className="field-label">Preferred Name</label>
               <input
-                type="checkbox"
-                checked={availability.includes(item)}
-                onChange={() => toggleArrayValue(item, availability, setAvailability)}
-              />{" "}
-              {item}
-            </label>
-          ))}
+                value={form.preferredName}
+                onChange={(e) => updateField("preferredName", e.target.value)}
+              />
 
-          <h3>Connection Method</h3>
-          <select
-            value={form.connectionPreference}
-            onChange={(e) => updateField("connectionPreference", e.target.value)}
-            style={{ width: "100%", maxWidth: 420, padding: "12px 14px", border: "1px solid #e5e7eb", borderRadius: 12 }}
-          >
-            <option value="">How would you like to connect?</option>
-            <option value="browse">Browse available individuals</option>
-            <option value="invite">Enter invite code</option>
-          </select>
+              <label className="field-label">Date of Birth</label>
+              <input
+                type="date"
+                value={form.dateOfBirth}
+                onChange={(e) => updateField("dateOfBirth", e.target.value)}
+              />
 
-          <button type="submit">Save and Continue</button>
-        </form>
-      </div>
-    </div>
+              <label className="field-label">Gender</label>
+              <select
+                value={form.gender}
+                onChange={(e) => updateField("gender", e.target.value)}
+              >
+                <option value="">Gender (optional)</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Non-binary">Non-binary</option>
+              </select>
+
+              <label className="field-label">Phone</label>
+              <input
+                value={form.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+              />
+
+              <label className="field-label">Email</label>
+              <input
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
+              />
+
+              <label className="field-label">City</label>
+              <input
+                value={form.city}
+                onChange={(e) => updateField("city", e.target.value)}
+              />
+
+              <label className="field-label">State</label>
+              <input
+                value={form.state}
+                onChange={(e) => updateField("state", e.target.value)}
+              />
+
+              <label className="field-label">Preferred Communication</label>
+              <select
+                value={form.preferredCommunication}
+                onChange={(e) =>
+                  updateField("preferredCommunication", e.target.value)
+                }
+              >
+                <option value="">Select method</option>
+                <option value="Phone">Phone</option>
+                <option value="Email">Email</option>
+                <option value="Text">Text</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2 */}
+        {step === 2 && (
+          <div className="step-shell">
+            <div className="top-banner">
+              <strong>Relationship & Experience</strong>
+              <p className="step-note" style={{ marginBottom: 0 }}>
+                Describe your connection and caregiving experience.
+              </p>
+            </div>
+
+            <div className="form-section">
+              <h3>Care Relationship</h3>
+
+              <label className="field-label">Relationship</label>
+              <select
+                value={form.relationship}
+                onChange={(e) => updateField("relationship", e.target.value)}
+              >
+                <option value="">Select relationship</option>
+                <option value="Parent">Parent</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Professional Caregiver">
+                  Professional Caregiver
+                </option>
+                <option value="Legal Guardian">Legal Guardian</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <label className="field-label">Care Duration</label>
+              <select
+                value={form.careDuration}
+                onChange={(e) => updateField("careDuration", e.target.value)}
+              >
+                <option value="">Select duration</option>
+                <option value="Less than 6 months">Less than 6 months</option>
+                <option value="6 months – 1 year">6 months – 1 year</option>
+                <option value="1–3 years">1–3 years</option>
+                <option value="3–5 years">3–5 years</option>
+                <option value="More than 5 years">More than 5 years</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3 */}
+        {step === 3 && (
+          <div className="step-shell">
+            <div className="top-banner">
+              <strong>Responsibilities</strong>
+              <p className="step-note" style={{ marginBottom: 0 }}>
+                Select the areas you currently support.
+              </p>
+            </div>
+
+            <div className="form-section">
+              <h3>Care Responsibilities</h3>
+
+              <CheckboxGroup
+                options={[
+                  "Personal care",
+                  "Medication management",
+                  "Meal preparation",
+                  "Transportation",
+                  "Behavioral support",
+                  "Communication support",
+                  "Financial support",
+                  "Medical appointment coordination",
+                  "Community integration support",
+                  "Safety supervision",
+                ]}
+                values={responsibilities}
+                onToggle={toggleResponsibility}
+              />
+            </div>
+          </div>
+        )}
+
+        <MultiStepActions
+          canGoBack={step > 1}
+          isLastStep={step === stepLabels.length}
+          loading={loading}
+          onBack={prevStep}
+        />
+      </form>
+    </OnboardingLayout>
   );
 }

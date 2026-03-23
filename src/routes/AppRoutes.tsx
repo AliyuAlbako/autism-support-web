@@ -6,24 +6,26 @@ import SelectRole from "../pages/SelectRole";
 import AdultProfileForm from "../pages/AdultProfileForm";
 import CaregiverProfileForm from "../pages/CaregiverProfileForm";
 import ClinicianProfileForm from "../pages/ClinicianProfileForm";
-import AdultDashboard from "../pages/AdultDashboard";
-import CaregiverDashboard from "../pages/CaregiverDashboard";
-import ClinicianDashboard from "../pages/ClinicianDashboard";
-import RequireAuth from "./RequireAuth";
-import RequireRole from "./RequireRole";
-import DashboardRedirect from "../pages/DashboardRedirect";
 import TherapistProfileForm from "../pages/TherapistProfileForm";
 import CaseWorkerProfileForm from "../pages/CaseWorkerProfileForm";
 import AdminProfileForm from "../pages/AdminProfileForm";
+
+import AdultDashboard from "../pages/AdultDashboard";
+import CaregiverDashboard from "../pages/CaregiverDashboard";
+import ClinicianDashboard from "../pages/ClinicianDashboard";
 import TherapistDashboard from "../pages/TherapistDashboard";
 import CaseWorkerDashboard from "../pages/CaseWorkerDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
+
+import DashboardRedirect from "../pages/DashboardRedirect";
 import DiscoverIndividuals from "../pages/DiscoverIndividuals";
 import IncomingRequests from "../pages/IncomingRequests";
 import SupportTeam from "../pages/SupportTeam";
 import CreateRoutine from "../pages/CreateRoutine";
 import RoutineView from "../pages/RoutineView";
 
+import RequireAuth from "./RequireAuth";
+import RequireRole from "./RequireRole";
 
 export default function AppRoutes() {
   return (
@@ -33,7 +35,16 @@ export default function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Onboarding routes */}
+      {/* General authenticated routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <RequireAuth>
+            <DashboardRedirect />
+          </RequireAuth>
+        }
+      />
+
       <Route
         path="/select-role"
         element={
@@ -42,8 +53,8 @@ export default function AppRoutes() {
           </RequireAuth>
         }
       />
-      
 
+      {/* Onboarding routes */}
       <Route
         path="/onboarding/adult"
         element={
@@ -52,7 +63,6 @@ export default function AppRoutes() {
           </RequireAuth>
         }
       />
-
       <Route
         path="/onboarding/caregiver"
         element={
@@ -61,7 +71,6 @@ export default function AppRoutes() {
           </RequireAuth>
         }
       />
-
       <Route
         path="/onboarding/clinician"
         element={
@@ -70,8 +79,32 @@ export default function AppRoutes() {
           </RequireAuth>
         }
       />
+      <Route
+        path="/onboarding/therapist"
+        element={
+          <RequireAuth>
+            <TherapistProfileForm />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/onboarding/caseworker"
+        element={
+          <RequireAuth>
+            <CaseWorkerProfileForm />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/onboarding/admin"
+        element={
+          <RequireAuth>
+            <AdminProfileForm />
+          </RequireAuth>
+        }
+      />
 
-      {/* Role dashboards */}
+      {/* Adult routes */}
       <Route
         path="/adult"
         element={
@@ -83,16 +116,47 @@ export default function AppRoutes() {
         }
       />
       <Route
-  path="/routine/:id"
-  element={
-    <RequireAuth>
-      <RequireRole role="adult">
-        <RoutineView />
-      </RequireRole>
-    </RequireAuth>
-  }
-/>
+        path="/create-routine"
+        element={
+          <RequireAuth>
+            <RequireRole role="adult">
+              <CreateRoutine />
+            </RequireRole>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/routine/:id"
+        element={
+          <RequireAuth>
+            <RequireRole role="adult">
+              <RoutineView />
+            </RequireRole>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/requests"
+        element={
+          <RequireAuth>
+            <RequireRole role="adult">
+              <IncomingRequests />
+            </RequireRole>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/support-team"
+        element={
+          <RequireAuth>
+            <RequireRole role="adult">
+              <SupportTeam />
+            </RequireRole>
+          </RequireAuth>
+        }
+      />
 
+      {/* Caregiver routes */}
       <Route
         path="/caregiver"
         element={
@@ -104,6 +168,7 @@ export default function AppRoutes() {
         }
       />
 
+      {/* Clinician routes */}
       <Route
         path="/clinician"
         element={
@@ -115,109 +180,44 @@ export default function AppRoutes() {
         }
       />
 
+      {/* Other role dashboards */}
+      <Route
+        path="/therapist"
+        element={
+          <RequireAuth>
+            <TherapistDashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/caseworker"
+        element={
+          <RequireAuth>
+            <CaseWorkerDashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <RequireAuth>
+            <AdminDashboard />
+          </RequireAuth>
+        }
+      />
+
+      {/* Shared authenticated route */}
+      <Route
+        path="/discover"
+        element={
+          <RequireAuth>
+            <DiscoverIndividuals />
+          </RequireAuth>
+        }
+      />
+
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
-
-      <Route
-  path="/dashboard"
-  element={
-    <RequireAuth>
-      <DashboardRedirect />
-    </RequireAuth>
-  }
-/>
-
-<Route
-  path="/onboarding/therapist"
-  element={
-    <RequireAuth>
-      <TherapistProfileForm />
-    </RequireAuth>
-  }
-/>
-
-<Route
-  path="/onboarding/caseworker"
-  element={
-    <RequireAuth>
-      <CaseWorkerProfileForm />
-    </RequireAuth>
-  }
-/>
-
-<Route
-  path="/onboarding/admin"
-  element={
-    <RequireAuth>
-      <AdminProfileForm />
-    </RequireAuth>
-  }
-/>
-<Route
-  path="/therapist"
-  element={
-    <RequireAuth>
-      <TherapistDashboard />
-    </RequireAuth>
-  }
-/>
-
-<Route
-  path="/caseworker"
-  element={
-    <RequireAuth>
-      <CaseWorkerDashboard />
-    </RequireAuth>
-  }
-/>
-
-<Route
-  path="/admin"
-  element={
-    <RequireAuth>
-      <AdminDashboard />
-    </RequireAuth>
-  }
-/>
-
-<Route
-  path="/discover"
-  element={
-    <RequireAuth>
-      <DiscoverIndividuals />
-    </RequireAuth>
-  }
-/>
-<Route
-  path="/requests"
-  element={
-    <RequireAuth>
-      <RequireRole role="adult">
-        <IncomingRequests />
-      </RequireRole>
-    </RequireAuth>
-  }
-/>
-<Route
-  path="/support-team"
-  element={
-    <RequireAuth>
-      <RequireRole role="adult">
-        <SupportTeam />
-      </RequireRole>
-    </RequireAuth>
-  }
-/>
-<Route
-  path="/create-routine"
-  element={
-    <RequireAuth>
-      <RequireRole role="adult">
-        <CreateRoutine />
-      </RequireRole>
-    </RequireAuth>
-  }
-/>
     </Routes>
   );
 }
