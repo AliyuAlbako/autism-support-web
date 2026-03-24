@@ -25,7 +25,7 @@ import IncomingRequests from "../pages/IncomingRequests";
 import SupportTeam from "../pages/SupportTeam";
 import CreateRoutine from "../pages/CreateRoutine";
 import RoutineView from "../pages/RoutineView";
-
+import ForgotPassword from "../pages/ForgotPassword";
 import RequireAuth from "./RequireAuth";
 import RequireRole from "./RequireRole";
 
@@ -38,6 +38,8 @@ export default function AppRoutes() {
        <Route path="/contact" element={<Contact />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      
       
 
       {/* General authenticated routes */}
